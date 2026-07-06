@@ -20,15 +20,14 @@ public:
     this->_clk = clk;
     setPin(_dio);
     setPin(_clk);
+    _init();
     _hello();
   }
 
   // convert value and show on the display
   void show(uint16_t value)
   {
-    // convert:
     _convert(value);
-    // and show
     _showDigitals();
   }
 
@@ -56,24 +55,7 @@ public:
     _showDigitals();
   }
 
-  /*
-  void point(bool state)
-  {
-    switch (state)
-    {
-      case true:
-      for (uint8_t i = 0; i < 4; i++)
-      _digitsToShow[i] |= (1 << 7);
-      break;
-      case false:
-      for (uint8_t i = 0; i < 4; i++)
-      _digitsToShow[i] &= ~(1 << 7);
-    }
-    _showDigitals();
-  }
-  */
-
-  void setTime(uint8_t value, uint8_t razr)
+  void showTime(uint8_t value, uint8_t razr)
   {
     uint8_t i, j;
     switch (razr)
@@ -91,24 +73,8 @@ public:
     _digitsToShow[j] = _digits[value % 10];
     _showDigitals();
   }
-
-/*
-  void razrState(uint8_t razr, bool state)
-  {
-    switch (state)
-    {
-      case true:
-      _digitsToShow[razr] = _digitsToShowOld[razr];
-      break;
-      case false:
-      _digitsToShow[razr] = _digits[CHAR_OFF];
-      break;
-    }
-    _showDigitals();
-  }
-*/
   
-  enum  // Выбранный разряд (при установке времени)
+  enum  // Razr
   {
     RAZR_SEC = 0,
     RAZR_MIN = 1
@@ -145,6 +111,19 @@ private:
     _delay_us(2);
   }
 
+  void _checkPoint(uint8_t p)
+  {
+    switch (_pointState)
+    {
+      case true:
+      _digitsToShow[p] |= (1 << 7);
+      break;
+      case false:
+      _digitsToShow[p] &= ~(1 << 7);
+      break;
+    }
+  }
+
   // just send a byte of data and waiting for ACK
   void _send(uint8_t value)
   {
@@ -177,15 +156,7 @@ private:
     _send(CMD_DATA);
     for (uint8_t i = 0; i < 4; i++)
     {
-      switch (_pointState)
-      {
-        case true:
-        _digitsToShow[i] |= (1 << 7);
-        break;
-        case false:
-        _digitsToShow[i] &= ~(1 << 7);
-        break;
-      }
+      _checkPoint(i);
       _send(_digitsToShow[i]);
     }
     _stop();
@@ -205,13 +176,16 @@ private:
     }
   }
 
-  // Start animation
-  void _hello()
+  void _init()
   {
     _sendByte(CMD_MODE);
     _showDigitals();
     setBrightness(1);
+  }
 
+  // Start animation
+  void _hello()
+  {
     // Anim
     cli();
     uint8_t i = 0, j = 0;
@@ -256,10 +230,10 @@ private:
   uint8_t _dio, _clk;
 
   volatile bool _pointState = true;
-  volatile uint8_t _digitsToShow[4] = { 0, 0, 0, 0 },
+  volatile uint8_t _digitsToShow[4] = { 0b01000000, 0b01000000, 0b01000000, 0b01000000 },
                 _digitsToShowOld[4] = { 0, 0, 0, 0 };
   const uint8_t _digits[12] = { 0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110, 0b01101101, 0b01111100, 0b00000111, 0b01111111, 0b01100111 },
-                  _chars[3] = { 0b00000000, 0b01000000, 0b00000000 };   // ' ', '-'
+                  _chars[2] = { 0b00000000, 0b01000000 };   // ' ', '-'
 
 
   enum

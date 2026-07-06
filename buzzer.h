@@ -13,7 +13,7 @@ prescallers:
 */
 
 // This use Timer_0 and OCR0A
-// sounds only 7 notes, use Timer_0
+// sounds only 7 notes, using Timer_0
 class Buzzer
 {
 public:
@@ -91,8 +91,6 @@ public:
   const uint8_t _tickDuration[7] = { 19, 17, 15, 14, 12, 11, 10 };   // x10 - for use without float
   
 };
-
-
 
 
 
