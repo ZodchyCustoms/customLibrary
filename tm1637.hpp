@@ -9,6 +9,8 @@
 Функция _updateDisplay() отправляет их на экран - каждый байт это цифра (код).
 Для включения двоеточия необходимо установить старший бит во всех и отправить байты.
 Для выбора разряда необходимо добавить его номер к CMD_DATA.
+
+После запуска показывает четыре тире!
 */
 
 
@@ -35,7 +37,7 @@ public:
     // Anim
     cli();
     uint8_t i = 0, j = 0;
-    uint16_t _pause = 150;
+    uint16_t _pause = 70;
     for (; i < 4; i++)
     {
       _digitsToShow[i] |= (1 << j);
@@ -92,8 +94,12 @@ public:
   {
     if (level > 7)
       level = 7;
+    if (level == 0)
+      _brightness = CMD_OFF;
+    else
+      _brightness = CMD_BRIGHT + level;
     _start();
-    _send(CMD_BRIGHT + level);
+    _send(_brightness);
     _stop();
   }
 
@@ -221,13 +227,14 @@ private:
   {
     _sendByte(CMD_MODE);
     _updateDisplay();
-    setBrightness(1);
+    setBrightness(_brightness);
   }
 
 
   uint8_t _dio, _clk;
 
-  bool _pointState = true;
+  bool _pointState = false;
+  uint8_t _brightness = 1;
   uint8_t _digitsToShow[4] = { 0b01000000, 0b01000000, 0b01000000, 0b01000000 };
   const uint8_t _codesOfDigits[12] = { 0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110, 0b01101101, 0b01111100, 0b00000111, 0b01111111, 0b01100111 },
                          _chars[2] = { 0b00000000, 0b01000000 };   // ' ', '-'
@@ -235,11 +242,11 @@ private:
 
   enum
   {
-    CMD_MODE = 0b01000000,    // 0x40,  авто инкремент разряда
-    CMD_FIXED = 0b01000100,   // 0x44,  фиксированный режим (к CMD_DATA прибавть номер разряда 0-3)
-    CMD_DATA = 0b11000000,    // 0xC0,  адрес первого разряда
+    CMD_MODE   = 0b01000000,  // 0x40,  авто инкремент разряда
+    CMD_FIXED  = 0b01000100,  // 0x44,  фиксированный режим (к CMD_DATA прибавть номер разряда 0-3)
+    CMD_DATA   = 0b11000000,  // 0xC0,  адрес первого разряда
     CMD_BRIGHT = 0b10001000,  // 0x88,  сюда прибавить уровень яркости
-    CMD_OFF = 0b10000000      // 0x80,  офнуть показ цифр (или полностью???)
+    CMD_OFF    = 0b10000000   // 0x80,  офнуть показ цифр (или полностью???)
   };
 
   
