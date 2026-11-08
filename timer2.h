@@ -46,10 +46,10 @@ void setTimer0()
 }
 
 // timer0 going tone()
-//void tone(uint8_t value)
-//{
+void tone(uint8_t value)
+{
     
-//}
+}
 
 
 

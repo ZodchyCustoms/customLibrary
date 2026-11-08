@@ -1,7 +1,5 @@
 #include <avr/io.h>
-#include <customize/pins.h>
-
-
+#include <pins.h>
 
 class INDICATOR {
 public:
@@ -44,7 +42,7 @@ private:
         digitalToIndicate[i] = DIGITAL[10];
       } else {
         flag = true;
-        digitalToIndicate[i] = DIGITAL[digitalIndex];  
+        digitalToIndicate[i] = DIGITAL[digitalIndex];
         val -= digitalIndex * K[i];
       }
     }

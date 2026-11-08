@@ -1,6 +1,6 @@
 #pragma once
 #include <avr/io.h>
-#include <customize/pins.h>
+#include <customs/pins.h>
 
 #define PRESCALLER_T0 4
 
@@ -13,15 +13,19 @@ prescallers:
 */
 
 // This use Timer_0 and OCR0A
-// sounds only 7 notes, using Timer_0
+// sounds only 7 notes
+
 class Buzzer
 {
 public:
-  Buzzer(uint8_t pin)
+  Buzzer() {}
+  ~Buzzer() {}
+
+  void init(uint8_t pin)
   {
     this->_pin = pin;
-    setPin(_pin);
-    pinWrite(_pin, _pinState);
+    setPinOutput(_pin);
+    setPin(_pin, _pinState);
     TCCR0A = 0;
     TCCR0B = 0;
     TCCR0A |= (1 << WGM01);     // CTC mode
@@ -37,62 +41,79 @@ public:
  
   void playNote(uint8_t note, uint16_t duration)
   {
+    _ticks = (duration * 10 / _tickDuration[note]);
     _duration_state = true;
     _duration_mode = true;
-    _ticks = (duration * 10 / _tickDuration[note]);
     _on(note);
   }
 
   void off()
   {
-    _duration_state = false;
-    _duration_mode = false;
-    TIMSK0 = 0;
-    TCNT0 = 0;
-    TIFR0 = 0;
-  }
-  
-  void meandrTick()
-  {
-    switch (_duration_mode)
+    if (_isWorking)
     {
-      case true:
-      switch (_duration_state)
-      {
-        case true:
-        pinWrite(_pin, _pinState ^= 1);
-        _ticks < 2 ? _duration_state = false : _ticks--;
-        break;
-        case false:
-        off();
-        break;
-      }
-      break;
-      case false:
-      pinWrite(_pin, _pinState ^= 1);
-      break;
+      _isWorking = false;
+      _duration_state = false;    // double use ?
+      _duration_mode = false;
+      TCCR0B &= ~((1 << CS00) | (1 << CS01) | (1 << CS02));
+      TIMSK0 = 0;
+      TCNT0 = 0;
+      TIFR0 = 0;
     }
   }
-
-  
+    
   private:
 
   void _on(uint8_t noteIndex)
   {
-    TCCR0B = PRESCALLER_T0;
-    TIMSK0 |= (1 << OCIE0A);
+    if (noteIndex > 7)
+      noteIndex = 7;
+    if (!_isWorking)
+    {
+      _isWorking = true;
+      TCCR0B = PRESCALLER_T0;
+      TIMSK0 |= (1 << OCIE0A);
+    }
     OCR0A = _notes[noteIndex];
   }
 
-  volatile bool _pinState = false, _duration_state = false, _duration_mode = false;
+  volatile bool _isWorking = false, _pinState = false, _duration_state = false, _duration_mode = false;
   uint8_t _pin;
   volatile uint16_t _ticks = 0;
-  const uint8_t _notes[7] = { 118, 105, 93, 88, 78, 70, 62 };
+  const uint8_t _notes[7] =       { 118, 105, 93, 88, 78, 70, 62 };
   const uint8_t _tickDuration[7] = { 19, 17, 15, 14, 12, 11, 10 };   // x10 - for use without float
   
+  friend void BuzzerInterruptRoutine();
+
 };
 
+extern volatile Buzzer tone;
 
+void BuzzerInterruptRoutine()
+{
+  switch (tone._duration_mode)
+  {
+    case true:
+    switch (tone._duration_state)
+    {
+      case true:
+      setPin(tone._pin, tone._pinState ^= 1);
+      tone._ticks < 2 ? tone._duration_state = false : tone._ticks--;
+      break;
+      case false:
+      // tone.off();
+      break;
+    }
+    break;
+    case false:
+    setPin(tone._pin, tone._pinState ^= 1);
+    break;
+  }
+}
+
+ISR(TIMER0_COMPA_vect)
+{
+  BuzzerInterruptRoutine();
+}
 
 
 
