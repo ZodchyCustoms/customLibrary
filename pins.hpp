@@ -1,21 +1,28 @@
 #pragma once
 
+/*
+FOR INTERRUPTS:
+nano PINs        PORT        PCICR          PCMSKn [PCINTn]
+13 ... 8          B          PCIE0          PCMSK0 [5:0]
+A7 ... A0         C          PCIE1          PCMSK1 [14:8]
+7  ... 0          D          PCIE2          PCMSK2 [23:16]
+*/
 
 void setPinOutput(uint8_t pin)
 {
   switch (pin)
   {
-    default:
+  default:
     break;
-    case 0 ... 7:
+  case 0 ... 7:
     pin -= 0;
     DDRD |= (1 << pin);
     break;
-    case 8 ... 13:
+  case 8 ... 13:
     pin -= 8;
     DDRB |= (1 << pin);
     break;
-    case 14 ... 19:
+  case 14 ... 19:
     pin -= 14;
     DDRC |= (1 << pin);
     break;
@@ -27,19 +34,19 @@ void setPinInput(uint8_t pin)
 {
   switch (pin)
   {
-    default:
+  default:
     break;
-    case 0 ... 7:
+  case 0 ... 7:
     pin -= 0;
     DDRD &= ~(1 << pin);
     PORTD |= (1 << pin);
     break;
-    case 8 ... 13:
+  case 8 ... 13:
     pin -= 8;
     DDRB &= ~(1 << pin);
     PORTB |= (1 << pin);
     break;
-    case 14 ... 19:
+  case 14 ... 19:
     pin -= 14;
     DDRC &= ~(1 << pin);
     PORTC |= (1 << pin);
@@ -51,40 +58,40 @@ void setPin(uint8_t pin, bool state)
 {
   switch (pin)
   {
-    default:
+  default:
     break;
-    case 0 ... 7:
+  case 0 ... 7:
     pin -= 0;
     switch (state)
     {
-      case true:
+    case true:
       PORTD |= (1 << pin);
       break;
-      case false:
+    case false:
       PORTD &= ~(1 << pin);
       break;
     };
     break;
-    case 8 ... 13:
+  case 8 ... 13:
     pin -= 8;
     switch (state)
     {
-      case true:
+    case true:
       PORTB |= (1 << pin);
       break;
-      case false:
+    case false:
       PORTB &= ~(1 << pin);
       break;
     };
     break;
-    case 14 ... 19:
+  case 14 ... 19:
     pin -= 14;
     switch (state)
     {
-      case true:
+    case true:
       PORTC |= (1 << pin);
       break;
-      case false:
+    case false:
       PORTC &= ~(1 << pin);
       break;
     };
@@ -96,17 +103,17 @@ void togglePin(uint8_t pin)
 {
   switch (pin)
   {
-    default:
+  default:
     break;
-    case 0 ... 7:
+  case 0 ... 7:
     pin -= 0;
     PORTD ^= (1 << pin);
     break;
-    case 8 ... 13:
+  case 8 ... 13:
     pin -= 8;
     PORTB ^= (1 << pin);
     break;
-    case 14 ... 19:
+  case 14 ... 19:
     pin -= 14;
     PORTC ^= (1 << pin);
     break;
@@ -118,20 +125,22 @@ bool readPin(uint8_t pin)
 {
   switch (pin)
   {
-    default:
+  default:
     return false;
     break;
-    case 0 ... 7:
+  case 0 ... 7:
     pin -= 0;
-    return !( PIND & (1 << pin) );
+    return !(PIND & (1 << pin));
     break;
-    case 8 ... 13:
+  case 8 ... 13:
     pin -= 8;
-    return !( PINB & (1 << pin) );
+    return !(PINB & (1 << pin));
     break;
-    case 14 ... 19:
+  case 14 ... 19:
     pin -= 14;
-    return !( PINC & (1 << pin) );
+    return !(PINC & (1 << pin));
     break;
   };
 }
+
+

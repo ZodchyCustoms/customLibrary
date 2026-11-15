@@ -2,7 +2,7 @@
 
 #include <avr/io.h>
 #include <util/delay.h>
-#include <customs/pins.h>
+#include <customs/pins.hpp>
 
 /*
 Число для отображения хранится в массиве _digitsToShow[4] в виде кодов чисел.
@@ -73,10 +73,26 @@ public:
     sei();
   }
 
+  void off()
+  {
+    _sendByte(CMD_OFF);
+  }
+
+  void on()
+  {
+    _sendByte(CMD_BRIGHT);
+  }
+
   // convert value and show on the display
   void show(uint16_t value)
   {
     _convert(value);
+    _updateDisplay();
+  }
+
+  void show(uint16_t value, uint8_t razr)
+  {
+    _writeInRazr(value, razr);
     _updateDisplay();
   }
 
@@ -223,6 +239,15 @@ private:
     }
   }
 
+  void _writeInRazr(uint8_t val, uint8_t r)
+  {
+    if (val > 9 || r > 3)
+    {
+      return;
+    }
+    _digitsToShow[r] = _codesOfDigits[val];
+  }
+
   void _init()
   {
     _sendByte(CMD_MODE);
@@ -237,7 +262,7 @@ private:
   uint8_t _brightness = 1;
   uint8_t _digitsToShow[4] = { 0b01000000, 0b01000000, 0b01000000, 0b01000000 };
   const uint8_t _codesOfDigits[12] = { 0b00111111, 0b00000110, 0b01011011, 0b01001111, 0b01100110, 0b01101101, 0b01111100, 0b00000111, 0b01111111, 0b01100111 },
-                         _chars[2] = { 0b00000000, 0b01000000 };   // ' ', '-'
+                         _chars[4] = { 0b00000000, 0b01000000, 0b00001000, 0b00010100 };   // ' ', '-', '_' '| |'
 
 
   enum
