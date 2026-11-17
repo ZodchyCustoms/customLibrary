@@ -1,6 +1,6 @@
 #pragma once
 #include <avr/io.h>
-#include <customs/pins.h>
+#include <customs/pins.hpp>
 
 #define PRESCALLER_T0 4
 
