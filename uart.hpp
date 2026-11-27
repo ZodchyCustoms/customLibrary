@@ -1,8 +1,9 @@
 #pragma once
 #include <stdint.h>
 #include <avr/interrupt.h>
+#include <customs/vremes.hpp>
 
-#define TX_BUFFER_SIZE 200
+#define TX_BUFFER_SIZE 100
 #define RX_BUFFER_SIZE 50
 #define NUMBERS_BUFFER_SIZE 13
 
@@ -10,7 +11,7 @@
 class Uart
 {
 public:
-  static Uart& getInstance()
+  static Uart &getInstance()
   {
     static Uart instance;
     return instance;
@@ -30,7 +31,6 @@ public:
     UCSR0B = (1 << RXEN0) | (1 << TXEN0);
     UCSR0C = (1 << USBS0) | (3 << UCSZ00);
     sei();
-    
   }
 
   void print(const char *message)
@@ -38,13 +38,13 @@ public:
     _putInTxBuffer(message);
     _startTransmit();
   }
-  
+
   void print(const char ch)
   {
     _txBufferWrite(ch);
     _startTransmit();
   }
-  
+
   void print(int32_t number)
   {
     _putInTxBuffer(_convertNumbers(number));
@@ -53,24 +53,18 @@ public:
 
   bool available()
   {
-    return _bytesRecieved;
+    return (millis() - _lastRecievedTime > 50);
   }
-  
-  // Переделать на return const char*
-  void read()
-  {
-    print(_readFromRxBuffer());
-  }
-  
+
   void rxEnable()
   {
     UCSR0B |= (1 << RXCIE0);
   }
-  
 
-  // need to make a complite interrupt mode
-  void uartWriteInUDR0();
-  void uartReadFromUDR0();
+  char *read()
+  {
+    return _readFromRxBuffer();
+  }
 
 private:
   Uart() = default;
@@ -83,8 +77,8 @@ private:
       UCSR0B |= (1 << UDRIE0);
     }
   }
-  
-  char* _convertNumbers(int32_t number)
+
+  char *_convertNumbers(int32_t number)
   {
     bool _minus = false;
     uint8_t i = NUMBERS_BUFFER_SIZE - 1;
@@ -109,7 +103,7 @@ private:
       _numbers[i--] = '-';
     return &_numbers[i + 1];
   }
-  
+
   void _txBufferWrite(char byte)
   {
     _txBuffer[_tx_w++] = byte;
@@ -120,7 +114,7 @@ private:
       // TODO: add actions if OVF
     }
   }
-  
+
   void _putInTxBuffer(const char *byte)
   {
     while (*byte)
@@ -128,11 +122,11 @@ private:
       _txBufferWrite(*byte++);
     }
   }
-  
-  char* _readFromRxBuffer()
+
+  char *_readFromRxBuffer()
   {
     uint8_t i = 0;
-    while (_bytesRecieved > 0 && i < RX_BUFFER_SIZE)
+    while (_bytesRecieved > 0)
     {
       _message[i++] = _rxBuffer[_rx_r++];
       if (_rx_r == RX_BUFFER_SIZE)
@@ -150,21 +144,23 @@ private:
     if (_bytesToRead > 0)
     {
       UDR0 = _txBuffer[_tx_r++];
-      if (_tx_r == TX_BUFFER_SIZE)
+      if (_tx_r >= TX_BUFFER_SIZE)
         _tx_r = 0;
       _bytesToRead--;
-    } else
+    }
+    else
     {
       UCSR0B &= ~(1 << UDRIE0);
       _busy = false;
     }
   }
-  
+
   void _readFromUDR0()
   {
     _rxBuffer[_rx_w++] = UDR0;
     _bytesRecieved++;
-    if (_rx_w == RX_BUFFER_SIZE)
+    _lastRecievedTime = millis();
+    if (_rx_w >= RX_BUFFER_SIZE)
     {
       _rx_w = 0;
       // TO DO: actions if got OVF
@@ -174,23 +170,23 @@ private:
   // ########################## VARIABLES #############################
 
   uint16_t _baudRateValue;
-// for transmit:
+  // for transmit:
   char _txBuffer[TX_BUFFER_SIZE] = {'\0'};
   char _numbers[NUMBERS_BUFFER_SIZE + 1] = {'\0'}; // size + 1 for '\0' - last symbol
   uint8_t _tx_r = 0;
   uint8_t _tx_w = 0;
   volatile uint16_t _bytesToRead = 0;
+  volatile uint32_t _lastRecievedTime = 0;
   bool _busy = false;
   // for recieve:
   char _rxBuffer[RX_BUFFER_SIZE] = {'\0'};
   char _message[RX_BUFFER_SIZE + 1] = {'\0'};
   uint8_t _rx_r = 0;
   uint8_t _rx_w = 0;
-  uint8_t _bytesRecieved = 0;
+  int16_t _bytesRecieved = 0;
 
   friend void udreInterruptRoutine();
   friend void rxInterruptRoutine();
-
 };
 
 Uart uart = Uart::getInstance();

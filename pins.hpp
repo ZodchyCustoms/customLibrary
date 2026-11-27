@@ -22,7 +22,7 @@ void setPinOutput(uint8_t pin)
     pin -= 8;
     DDRB |= (1 << pin);
     break;
-  case 14 ... 19:
+  case 14 ... 21:
     pin -= 14;
     DDRC |= (1 << pin);
     break;
@@ -46,7 +46,7 @@ void setPinInput(uint8_t pin)
     DDRB &= ~(1 << pin);
     PORTB |= (1 << pin);
     break;
-  case 14 ... 19:
+  case 14 ... 21:
     pin -= 14;
     DDRC &= ~(1 << pin);
     PORTC |= (1 << pin);
@@ -84,7 +84,7 @@ void setPin(uint8_t pin, bool state)
       break;
     };
     break;
-  case 14 ... 19:
+  case 14 ... 21:
     pin -= 14;
     switch (state)
     {
@@ -136,11 +136,31 @@ bool readPin(uint8_t pin)
     pin -= 8;
     return !(PINB & (1 << pin));
     break;
-  case 14 ... 19:
+  case 14 ... 21:
     pin -= 14;
     return !(PINC & (1 << pin));
     break;
   };
 }
 
-
+void setInterrupt(uint8_t pin)
+{
+  switch (pin)
+  {
+  case 0 ... 7:
+    pin -= 0;
+    PCICR |= (1 << PCIE2);
+    PCMSK2 |= (1 << pin);
+    break;
+  case 8 ... 13:
+    pin -= 8;
+    PCICR |= (1 << PCIE0);
+    PCMSK0 |= (1 << pin);
+    break;
+  case 14 ... 21:
+    pin -= 14;
+    PCICR |= (1 << PCIE1);
+    PCMSK1 |= (1 << pin);
+    break;
+  }
+}
